@@ -78,3 +78,7 @@ helm upgrade --install agent-state oci://ghcr.io/agynio/charts/agent-state \
 
 Review `charts/agent-state/values.yaml` for all available configuration
 options, including resource requests, replica counts, and autoscaling.
+
+When running `helm lint` or `helm template` locally, supply one of the
+database options (for example, `--set database.url=dummy`) so rendering
+passes validation.
