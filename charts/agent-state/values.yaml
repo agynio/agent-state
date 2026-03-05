@@ -36,9 +36,12 @@ tolerations: []
 affinity: {}
 
 database:
+  # Plaintext database URL. Leave empty when using an existing secret.
   url: ""
   existingSecret:
+    # Secret containing the database URL. Leave empty when using `database.url`.
     name: ""
+    # Key within the secret that stores the connection string.
     key: database-url
 
 autoscaling:
