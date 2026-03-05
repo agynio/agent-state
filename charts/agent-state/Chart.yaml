@@ -1,0 +1,6 @@
+apiVersion: v2
+name: agent-state
+description: Helm chart for deploying the AgentStateService gRPC server.
+type: application
+version: 0.1.0
+appVersion: 0.1.0
