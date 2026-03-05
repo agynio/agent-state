@@ -45,6 +45,15 @@ jobs:
             type=sha,format=short,prefix=sha-
             type=raw,value=main,enable=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
+      - name: Setup Buf
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          version: 1.66.0
+
+      - name: Generate protobuf stubs
+        run: buf generate buf.build/agynio/api --path agynio/api/agent_state/v1
+
       - name: Build image
         uses: docker/build-push-action@v6
         with:

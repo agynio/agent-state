@@ -48,6 +48,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Setup Buf
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          version: 1.66.0
+
+      - name: Generate protobuf stubs
+        run: buf generate buf.build/agynio/api --path agynio/api/agent_state/v1
+
       - name: Build and push agent-state image
         uses: docker/build-push-action@v6
         with:
