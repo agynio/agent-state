@@ -35,10 +35,11 @@ tolerations: []
 
 affinity: {}
 
-env:
-  databaseUrl: ""
-  existingSecret: ""
-  secretKey: database-url
+database:
+  url: ""
+  existingSecret:
+    name: ""
+    key: database-url
 
 autoscaling:
   enabled: false

@@ -55,16 +55,17 @@ Helm chart to `oci://ghcr.io/agynio/charts` as `agent-state` version `1.2.3`.
 
 ## Helm chart usage
 
-Install (or upgrade) the chart from GHCR. Provide a database URL either via an
-existing secret (recommended) or inline value:
+Install (or upgrade) the chart from GHCR. You must provide a database URL via
+an existing secret (recommended) or by supplying it directly. Exactly one of
+`database.existingSecret.name` or `database.url` must be set:
 
 ```bash
 helm upgrade --install agent-state oci://ghcr.io/agynio/charts/agent-state \
   --version 1.2.3 \
   --namespace agent-state \
   --create-namespace \
-  --set env.existingSecret=agent-state-db \
-  --set env.secretKey=database-url
+  --set database.existingSecret.name=agent-state-db \
+  --set database.existingSecret.key=database-url
 ```
 
 If you prefer to supply the connection string directly:
@@ -72,7 +73,7 @@ If you prefer to supply the connection string directly:
 ```bash
 helm upgrade --install agent-state oci://ghcr.io/agynio/charts/agent-state \
   --version 1.2.3 \
-  --set env.databaseUrl="postgres://user:pass@host:port/db?sslmode=verify-full"
+  --set database.url="postgres://user:pass@host:port/db?sslmode=verify-full"
 ```
 
 Review `charts/agent-state/values.yaml` for all available configuration

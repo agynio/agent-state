@@ -95,7 +95,7 @@ jobs:
           echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ${{ env.REGISTRY }} --username "${{ github.actor }}" --password-stdin
 
       - name: Lint chart
-        run: helm lint ${{ env.CHART_PATH }}
+        run: helm lint ${{ env.CHART_PATH }} --set database.url=dummy
 
       - name: Package chart
         run: |

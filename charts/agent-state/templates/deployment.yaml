@@ -49,19 +49,36 @@ spec:
             - name: grpc
               containerPort: 50051
               protocol: TCP
-          {{- if or .Values.env.existingSecret .Values.env.databaseUrl }}
-          env:
-            {{- if .Values.env.existingSecret }}
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.env.existingSecret }}
-                  key: {{ .Values.env.secretKey | default "database-url" }}
-            {{- else if .Values.env.databaseUrl }}
-            - name: DATABASE_URL
-              value: {{ .Values.env.databaseUrl | quote }}
+          {{- $db := .Values.database -}}
+          {{- $url := "" -}}
+          {{- $secretName := "" -}}
+          {{- $secretKey := "database-url" -}}
+          {{- if $db }}
+            {{- with $db.url }}
+              {{- $url = . -}}
+            {{- end }}
+            {{- with $db.existingSecret }}
+              {{- with .name }}
+                {{- $secretName = . -}}
+              {{- end }}
+              {{- with .key }}
+                {{- $secretKey = . -}}
+              {{- end }}
             {{- end }}
           {{- end }}
+          {{- if and $secretName $url }}
+            {{- fail "set only one of database.url or database.existingSecret.name" -}}
+          {{- end }}
+          env:
+            - name: DATABASE_URL
+              {{- if $secretName }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: {{ $secretKey }}
+              {{- else }}
+              value: {{ required "database.url or database.existingSecret.name must be set" $url | quote }}
+              {{- end }}
           livenessProbe:
             tcpSocket:
               port: grpc
