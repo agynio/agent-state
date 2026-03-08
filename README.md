@@ -5,7 +5,7 @@ Go implementation of `AgentStateService` from [`agynio/api`](https://github.com/
 ## Prerequisites
 
 - Go 1.25+
-- Docker (the e2e tests start Postgres via docker-compose)
+- Docker (the e2e tests start Postgres via docker run)
 - [Buf CLI](https://buf.build/docs/installation) for protobuf code generation
 
 ## Getting started
@@ -18,17 +18,25 @@ go mod tidy
 buf generate buf.build/agynio/api --path agynio/api/agent_state/v1
 
 # Start Postgres locally (listens on localhost:55432)
-docker compose up -d
+docker run --name agent-state-postgres \
+  -e POSTGRES_USER=agentstate \
+  -e POSTGRES_PASSWORD=agentstate \
+  -e POSTGRES_DB=agentstate \
+  -p 55432:5432 \
+  -d public.ecr.aws/docker/library/postgres:16-alpine
 
 # Apply migrations and run the gRPC server
 DATABASE_URL="postgres://agentstate:agentstate@localhost:55432/agentstate?sslmode=disable" \
   go run ./cmd/agent-state-service
+
+# Stop Postgres when you're done
+docker rm -f agent-state-postgres
 ```
 
 ## Testing
 
-End-to-end coverage is provided by Go tests. The suite automatically ensures a
-docker-compose binary is available (downloading one if required).
+End-to-end coverage is provided by Go tests. The suite starts/stops Postgres
+via Docker CLI commands, so the Docker daemon must be available.
 
 ```bash
 go test ./...
