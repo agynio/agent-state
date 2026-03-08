@@ -3,11 +3,8 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -15,87 +12,52 @@ import (
 )
 
 const (
-	composeProject = "agent-state-e2e"
-	dbURL          = "postgres://agentstate:agentstate@localhost:55432/agentstate?sslmode=disable"
-)
-
-var (
-	composeFile    = mustAbs(filepath.Join("..", "..", "docker-compose.yml"))
-	composeCommand string
-	composePrefix  []string
+	postgresContainer = "agent-state-e2e-postgres"
+	postgresImage     = "public.ecr.aws/docker/library/postgres:16-alpine"
+	dbURL             = "postgres://agentstate:agentstate@localhost:55432/agentstate?sslmode=disable"
 )
 
 func TestMain(m *testing.M) {
-	if err := resolveCompose(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to resolve docker-compose: %v\n", err)
+	if err := ensureDocker(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to resolve docker: %v\n", err)
 		os.Exit(1)
 	}
-	if err := dockerComposeUp(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to start docker-compose: %v\n", err)
+	if err := startPostgres(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to start postgres: %v\n", err)
 		os.Exit(1)
 	}
 	code := m.Run()
-	if err := dockerComposeDown(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to stop docker-compose: %v\n", err)
+	if err := stopPostgres(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to stop postgres: %v\n", err)
 	}
 	os.Exit(code)
 }
 
-func resolveCompose() error {
-	if err := exec.Command("docker", "compose", "version").Run(); err == nil {
-		composeCommand = "docker"
-		composePrefix = []string{"compose"}
-		return nil
-	}
-	if path, err := exec.LookPath("docker-compose"); err == nil {
-		composeCommand = path
-		composePrefix = nil
-		return nil
-	}
-	binPath, err := downloadComposeBinary()
-	if err != nil {
+func ensureDocker() error {
+	if _, err := exec.LookPath("docker"); err != nil {
 		return err
 	}
-	composeCommand = binPath
-	composePrefix = nil
-	return nil
+	return runCommand("docker", "version", "--format", "{{.Server.Version}}")
 }
 
-func downloadComposeBinary() (string, error) {
-	url := "https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64"
-	binDir := filepath.Join(os.TempDir(), "agent-state-compose")
-	if err := os.MkdirAll(binDir, 0o755); err != nil {
-		return "", err
-	}
-	dest := filepath.Join(binDir, "docker-compose")
-	if _, err := os.Stat(dest); err == nil {
-		return dest, nil
-	}
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("unexpected status downloading docker-compose: %s", resp.Status)
-	}
-	file, err := os.Create(dest)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-	if _, err := io.Copy(file, resp.Body); err != nil {
-		return "", err
-	}
-	if err := file.Chmod(0o755); err != nil {
-		return "", err
-	}
-	return dest, nil
-}
-
-func dockerComposeUp() error {
-	_ = runCompose("down", "-v")
-	if err := runCompose("up", "-d"); err != nil {
+func startPostgres() error {
+	_ = runCommand("docker", "rm", "-f", postgresContainer)
+	if err := runCommand(
+		"docker",
+		"run",
+		"--name",
+		postgresContainer,
+		"-e",
+		"POSTGRES_USER=agentstate",
+		"-e",
+		"POSTGRES_PASSWORD=agentstate",
+		"-e",
+		"POSTGRES_DB=agentstate",
+		"-p",
+		"55432:5432",
+		"-d",
+		postgresImage,
+	); err != nil {
 		return err
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
@@ -112,14 +74,8 @@ func dockerComposeUp() error {
 	}
 }
 
-func dockerComposeDown() error {
-	return runCompose("down", "-v")
-}
-
-func runCompose(args ...string) error {
-	base := append([]string(nil), composePrefix...)
-	base = append(base, "-f", composeFile, "-p", composeProject)
-	return runCommand(composeCommand, append(base, args...)...)
+func stopPostgres() error {
+	return runCommand("docker", "rm", "-f", postgresContainer)
 }
 
 func runCommand(name string, args ...string) error {
@@ -127,14 +83,6 @@ func runCommand(name string, args ...string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
-}
-
-func mustAbs(path string) string {
-	abs, err := filepath.Abs(path)
-	if err != nil {
-		panic(err)
-	}
-	return abs
 }
 
 func pingDatabase(ctx context.Context) error {
