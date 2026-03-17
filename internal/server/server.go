@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	agentstatev1 "github.com/agynio/agent-state/gen/go/agynio/api/agent_state/v1"
+	agentstatev1 "github.com/agynio/agent-state/.gen/go/agynio/api/agent_state/v1"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

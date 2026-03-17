@@ -1,14 +1,18 @@
-version: v1
+version: v2
+
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/agynio/agent-state/.gen/go
 
 plugins:
-  - plugin: buf.build/protocolbuffers/go
-    out: gen/go
+  - remote: buf.build/protocolbuffers/go
+    out: .gen/go
     opt:
       - paths=source_relative
-      - Magynio/api/agent_state/v1/agent_state.proto=github.com/agynio/agent-state/gen/go/agynio/api/agent_state/v1
-  - plugin: buf.build/grpc/go
-    out: gen/go
+  - remote: buf.build/grpc/go
+    out: .gen/go
     opt:
       - paths=source_relative
       - require_unimplemented_servers=false
-      - Magynio/api/agent_state/v1/agent_state.proto=github.com/agynio/agent-state/gen/go/agynio/api/agent_state/v1

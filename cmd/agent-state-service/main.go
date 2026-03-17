@@ -10,7 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	agentstatev1 "github.com/agynio/agent-state/gen/go/agynio/api/agent_state/v1"
+	agentstatev1 "github.com/agynio/agent-state/.gen/go/agynio/api/agent_state/v1"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
 

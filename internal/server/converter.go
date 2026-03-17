@@ -3,7 +3,7 @@ package server
 import (
 	"fmt"
 
-	agentstatev1 "github.com/agynio/agent-state/gen/go/agynio/api/agent_state/v1"
+	agentstatev1 "github.com/agynio/agent-state/.gen/go/agynio/api/agent_state/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/agynio/agent-state/internal/state"
