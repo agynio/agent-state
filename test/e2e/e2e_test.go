@@ -1,17 +1,14 @@
+//go:build e2e
+
 package e2e
 
 import (
 	"context"
-	"net"
 	"testing"
 	"time"
 
-	agentstatev1 "github.com/agynio/agent-state/gen/go/agynio/api/agent_state/v1"
-	"github.com/agynio/agent-state/internal/db"
-	"github.com/agynio/agent-state/internal/server"
-	"github.com/agynio/agent-state/internal/state"
+	agentstatev1 "github.com/agynio/agent-state/.gen/go/agynio/api/agent_state/v1"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -21,24 +18,7 @@ func TestAgentStateServiceE2E(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	pool, err := pgxpool.New(ctx, dbURL)
-	require.NoError(t, err)
-	defer pool.Close()
-
-	require.NoError(t, db.ApplyMigrations(ctx, pool))
-
-	lis, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
-
-	grpcServer := grpc.NewServer()
-	agentstatev1.RegisterAgentStateServiceServer(grpcServer, server.New(state.NewStore(pool)))
-
-	go func() {
-		_ = grpcServer.Serve(lis)
-	}()
-	defer grpcServer.GracefulStop()
-
-	conn, err := grpc.DialContext(ctx, lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+	conn, err := grpc.NewClient(agentStateAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err)
 	defer conn.Close()
 
